@@ -1,225 +1,210 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <windows.h>
+#include <string.h>
+#include <errno.h>
 
-int lineSize=0,c;
-char **lines;
+char **insertLine(char **lines, int *numLines, int *capacity, int index, const char *text);
+char **deleteLine(char **lines, int *numLines, int *capacity, int index);
+void printAllLines(char **lines, int numLines);
+void freeAll(char **lines, int numLines);
+char **shrinkToFit(char **lines, int numLines, int *capacity);
+void saveToFile(char **lines, int numLines, const char *filename);
+char **loadFromFile(char **lines, int *numLines, int *capacity, const char *filename);
+int main(void) {
+    int initialCapacity = 2;
+    int maxLineLength = 1024;
 
-char *readLine();
-int insertLine(char index[],char  *text);
-void printAllLines();
-void deleteLine();
-void freeAll();
-void updateFile();
-char* readLineDynamic(FILE *fp);
-
-
-int main() {
-
-    lines=(char **)malloc(lineSize * sizeof(char *));
-    if(lines==NULL){
-        printf("Dynamic memory allocation failed!");
-        return 1;
+    char **lines = malloc(initialCapacity * sizeof(char*));
+    if (!lines) {
+        perror("Failed to allocate memory for lines array");
+        exit(EXIT_FAILURE);
     }
-
-    FILE *fp = fopen("q5.txt", "r");
-    if(fp==NULL){
-        printf("Can't open file q5.txt");
-        return 1;
-    }
-    char *line;
-    while ((line = readLineDynamic(fp)) != NULL) {
-        lineSize++;
-        char *Allocating = malloc(strlen(line) + 1);
-        if(Allocating==NULL){
-            printf("Allocating memory to 2d failed ");
-            return 0;
+    int numLines = 0;
+    int capacity = initialCapacity;
+    int choice;
+    while (1) {
+        printf("\n--- Minimal Line Editor ---\n");
+        printf("1. Insert Line\n");
+        printf("2. Delete Line\n");
+        printf("3. Print All Lines\n");
+        printf("4. Shrink to Fit\n");
+        printf("5. Save to File\n");
+        printf("6. Load from File\n");
+        printf("7. Exit\n");
+        printf("Enter your choice: ");
+        if (scanf("%d", &choice) != 1) {
+            fprintf(stderr, "Invalid input\n");
+            while (getchar() != '\n');
+            continue;
         }
-        lines[lineSize - 1]=Allocating;
-        strcpy(lines[lineSize-1],line);
-        free(line);
+        while (getchar() != '\n');
+
+        if (choice == 1) {
+            int index;
+            char buffer[1024];
+            printf("Enter line index to insert at (0 to %d): ", numLines);
+            if (scanf("%d", &index) != 1 || index < 0 || index > numLines) {
+                fprintf(stderr, "Invalid index\n");
+                while (getchar() != '\n');
+                continue;
+            }
+            while (getchar() != '\n');
+            printf("Enter line text: ");
+            if (!fgets(buffer, maxLineLength, stdin)) {
+                fprintf(stderr, "Failed to read line\n");
+                continue;
+            }
+            buffer[strcspn(buffer, "\n")] = '\0';
+
+            lines = insertLine(lines, &numLines, &capacity, index, buffer);
+        }
+        else if (choice == 2) {
+            int index;
+            printf("Enter line index to delete (0 to %d): ", numLines-1);
+            if (scanf("%d", &index) != 1 || index < 0 || index >= numLines) {
+                fprintf(stderr, "Invalid index\n");
+                while (getchar() != '\n');
+                continue;
+            }
+            while (getchar() != '\n');
+            lines = deleteLine(lines, &numLines, &capacity, index);
+        }
+        else if (choice == 3) {
+            printAllLines(lines, numLines);
+        }
+        else if (choice == 4) {
+            lines = shrinkToFit(lines, numLines, &capacity);
+            printf("Shrunk array to fit %d lines.\n", numLines);
+        }
+        else if (choice == 5) {
+            char filename[256];
+            printf("Enter filename to save: ");
+            if (!fgets(filename, 256, stdin)) continue;
+            filename[strcspn(filename, "\n")] = '\0';
+            saveToFile(lines, numLines, filename);
+        }
+        else if (choice == 6) {
+            char filename[256];
+            printf("Enter filename to load: ");
+            if (!fgets(filename, 256, stdin)) continue;
+            filename[strcspn(filename, "\n")] = '\0';
+            lines = loadFromFile(lines, &numLines, &capacity, filename);
+        }
+        else if (choice == 7) {
+            break;
+        }
+        else {
+            printf("Invalid choice\n");
+        }
     }
-    fclose(fp);
-
-
-    int chose;
-    while(1){
-        system("cls");
-        printf("Chose from the above: \n1. Insert Line \n2. Delete Line\n3. Display All Lines\n4. Delete All Lines\n5. Exit\n\tChose :) ");
-        scanf("%d",&chose);
-        switch (chose)
-        {
-        case 1:
-            char index[5];
-            printf("Index :- ");
-            scanf("%s",index);
-            while((c=getchar()), c != '\n' && c != EOF);
-            printf("%s Line :- ",index);
-            char *text=readLine();
-            insertLine(index,text);
-            break;
-        case 2:
-            deleteLine();
-            printf("\nDeleted a line\n");
-            Sleep(5000);
-            break;
-        case 3:
-            printAllLines();
-            Sleep(5000);
-            break;
-        case 4:
-            freeAll();
-            printf("\nDeleted all lines!...\n");
-            Sleep(5000);
-            break;
-        case 5:
-            return 0;
-            break;
-        
-        default:
-            printf("\nInvalid Input :( \n");
-            Sleep(3000);
-            break;
-        }   
-    }
-
+    freeAll(lines, numLines);
     return 0;
 }
 
-char *readLine(){
-    char *buffer=NULL;
-    int size=0;
-    int ch;
-    while((ch=getchar()), ch != '\n' && ch != EOF){
-        buffer=realloc(buffer,size+1);
-        if(buffer==NULL){
-            printf("\nDMA failed!\n");
-            return 0;
+char **insertLine(char **lines, int *numLines, int *capacity, int index, const char *text) {
+    if (*numLines >= *capacity) {
+        int newCapacity = (*capacity) * 2;
+        char **temp = realloc(lines, newCapacity * sizeof(char*));
+        if (!temp) {
+            perror("Memory allocation failed");
+            return lines;
         }
-        buffer[size]=ch;
-        size++;
+        lines = temp;
+        *capacity = newCapacity;
     }
-    buffer = realloc(buffer, size + 1);
-    if(buffer==NULL){
-            printf("\nDMA failed!\n");
-            return 0;
+
+    int i;
+    for (i = *numLines; i > index; i--) {
+        lines[i] = lines[i-1];
     }
-    buffer[size] = '\0';
-    return buffer;
-}
-int insertLine(char index[],char  *text){
-    for(int i=0;i<lineSize;i++){
-        if(strncmp(lines[i],index,strlen(index))==0){
-            printf("\nLine already exist on index %s \n",index);
-            Sleep(5000);
-            return 0;
-        }
+    lines[index] = malloc(strlen(text) + 1);
+    if (!lines[index]) {
+        perror("Memory allocation failed");
+        return lines;
     }
-    char nextIndexOfLines[5];
-    int indexNum,nextIndexNu;
-    for(int i=0;i<lineSize-1;i++){
-        indexNum=atoi(index);
-        sscanf(lines[i+1],"%[^ ]",nextIndexOfLines);
-        nextIndexNu=atoi(nextIndexOfLines);
-        if(indexNum<nextIndexNu){
-
-            lineSize++;
-            lines=realloc(lines,sizeof(char *) * lineSize);
-
-            int j;
-            for(j=lineSize-1;j>i+1;j--){
-                lines[j]=lines[j-1];
-            }
-            lines[i+1]=malloc(strlen(text) + strlen(index) + 5);
-            sprintf(lines[i+1],"%s %s",index,text); 
-
-            updateFile();
-            printf("Added Line %s successfully ",index);
-            Sleep(5000);
-            return 0;
-        }
-    }
-    lineSize++;
-    lines=realloc(lines,sizeof(char *) * lineSize);
-    if(lines==NULL){
-            printf("\nDMA failed!\n");
-            return 0;
-        }
-    lines[lineSize-1]=malloc(strlen(text) + strlen(index) + 5);
-
-    sprintf(lines[lineSize-1],"%s %s",index,text);
-    updateFile();
-    return 0;
+    strcpy(lines[index], text);
+    (*numLines)++;
+    return lines;
 }
 
-void printAllLines(){
-    printf("\n\tThe Lines:\n\n");
-    for(int i=0;i<lineSize;i++){
-        printf("%s\n",lines[i]);
+char **deleteLine(char **lines, int *numLines, int *capacity, int index) {
+    free(lines[index]);
+    int i;
+    for (i = index; i < *numLines - 1; i++) {
+        lines[i] = lines[i+1];
     }
+    (*numLines)--;
+    return lines;
 }
-void deleteLine(){
-    char index[5];
-    printf("Index :- ");
-    scanf("%s",index);
 
-    for(int i=0;i<lineSize;i++){
-        if(strncmp(lines[i],index,strlen(index))==0){
-            memmove(&lines[i],&lines[i+1],(lineSize-i-1)*sizeof(char*));
-            lineSize--;
-            lines=realloc(lines,lineSize*sizeof(char *));
-            if(lines==NULL){
-            printf("\nDMA failed! to shrink\n");
-            return;
-            }
-            free(lines[i]);
-            updateFile();
-            return;
-        }
+void printAllLines(char **lines, int numLines) {
+    printf("\n--- Text Buffer ---\n");
+    int i;
+    for (i = 0; i < numLines; i++) {
+        printf("%d: %s\n", i, lines[i]);
     }
 }
-void freeAll(){
-    for(int i=0;i<lineSize;i++){
+
+void freeAll(char **lines, int numLines) {
+    int i;
+    for (i = 0; i < numLines; i++) {
         free(lines[i]);
     }
     free(lines);
-    lines=NULL;
-    lineSize=0;
-    updateFile();
 }
-void updateFile(){
-    FILE *pFile=fopen("q5.txt","w");
-    if(pFile==NULL){
-        printf("\nOpening file failed!\n");
+
+char **shrinkToFit(char **lines, int numLines, int *capacity) {
+    if (numLines == 0) {
+        free(lines);
+        lines = NULL;
+        *capacity = 0;
+        return lines;
+    }
+    char **temp = realloc(lines, numLines * sizeof(char*));
+    if (!temp) {
+        perror("Shrink memory failed");
+        return lines;
+    }
+    *capacity = numLines;
+    return temp;
+}
+
+void saveToFile(char **lines, int numLines, const char *filename) {
+    FILE *fp = fopen(filename, "w");
+    if (!fp) {
+        perror("File open failed");
         return;
     }
-    for(int i=0;i<lineSize;i++){
-        fprintf(pFile,"%s\n",lines[i]);
+    int i;
+    for (i = 0; i < numLines; i++) {
+        fprintf(fp, "%s\n", lines[i]);
     }
-    fclose(pFile);
+    fclose(fp);
+    printf("Saved %d lines to %s\n", numLines, filename);
 }
-char* readLineDynamic(FILE *fp) {
-    char *buffer = NULL;
-    int size = 0;
-    int ch;
 
-    while ((ch = fgetc(fp)) != '\n' && ch != EOF) {
-        char *newBuffer = realloc(buffer, size + 2); 
-        if(newBuffer==NULL){
-            printf("\nDMA failed!\n");
-            return 0;
-        }
-        if (!newBuffer) {
-            free(buffer);
-            return NULL;
-        }
-        buffer = newBuffer;
-        buffer[size++] = ch;
+char **loadFromFile(char **lines, int *numLines, int *capacity, const char *filename) {
+    FILE *fp = fopen(filename, "r");
+    if (!fp) {
+        perror("File open failed");
+        return lines;
     }
-
-    if (size == 0 && ch == EOF)
-        return NULL; 
-
-    buffer[size] = '\0';
-    return buffer;
+    freeAll(lines, *numLines);
+    lines = malloc(2 * sizeof(char*));
+    if (!lines) {
+        perror("Memory allocation failed");
+        fclose(fp);
+        exit(EXIT_FAILURE);
+    }
+    *numLines = 0;
+    *capacity = 2;
+    char buffer[1024];
+    while (fgets(buffer, 1024, fp)) {
+        buffer[strcspn(buffer, "\n")] = '\0';
+        lines = insertLine(lines, numLines, capacity, *numLines, buffer);
+    }
+    fclose(fp);
+    printf("Loaded %d lines from %s\n", *numLines, filename);
+    return lines;
 }
+
