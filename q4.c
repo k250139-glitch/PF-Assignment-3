@@ -10,68 +10,101 @@ struct Book {
 struct Shelf {
     int capacity;
     int filled;
-    struct Book *book;
+    struct Book *books;
 };
 
-int addBook(struct Shelf *shelf, int x, int y);
-int accessBook(struct Shelf *shelf, int x);
+int findBook(struct Shelf *shelf, int id);
+void addBook(struct Shelf *shelf, int id, int score);
+void accessBook(struct Shelf *shelf, int id);
 
-int main() {
-    char operation[10];
-    int x, y, numOfOperations, capacity;
-    scanf("%d %d", &capacity, &numOfOperations);
+int main(void) {
+    int capacity, operations;
+
+    printf("Enter shelf capacity and number of operations: ");
+    scanf("%d %d", &capacity, &operations);
+
     struct Shelf shelf;
     shelf.capacity = capacity;
     shelf.filled = 0;
-    shelf.book = malloc(sizeof(struct Book) * capacity);
-    for (int i = 0; i < numOfOperations; i++) {
-        scanf("%s", operation);
-        if (strcmp(operation, "ADD") == 0) {
-            scanf("%d %d", &x, &y);
-            addBook(&shelf, x, y);
-        } else if (strcmp(operation, "ACCESS") == 0) {
-            scanf("%d", &x);
-            accessBook(&shelf, x);
-        } else {
-            printf("Invalid operation\n");
+
+    shelf.books = malloc(sizeof(struct Book) * capacity);
+    if (shelf.books == NULL) {
+        printf("Memory allocation failed\n");
+        return 1;
+    }
+
+    char op[10];
+    int id, score;
+
+    for (int i = 0; i < operations; i++) {
+        printf("\nEnter operation (ADD or ACCESS): ");
+        scanf("%9s", op);
+
+        if (strcmp(op, "ADD") == 0) {
+            printf("Enter book ID and popularity score: ");
+            scanf("%d %d", &id, &score);
+            addBook(&shelf, id, score);
+            printf("Book with ID %d added/updated successfully.\n", id);
+        }
+        else if (strcmp(op, "ACCESS") == 0) {
+            printf("Enter book ID to access: ");
+            scanf("%d", &id);
+            accessBook(&shelf, id);
+        }
+        else {
+            printf("Invalid operation. Please enter ADD or ACCESS.\n");
             i--;
         }
     }
 
-    free(shelf.book);
+    free(shelf.books);
+    printf("\nAll operations completed. Goodbye!\n");
     return 0;
 }
-int addBook(struct Shelf *shelf, int x, int y) {
+
+int findBook(struct Shelf *shelf, int id) {
     for (int i = 0; i < shelf->filled; i++) {
-        if (shelf->book[i].uniqueId == x) {
-            shelf->book[i].popularityScore = y;
-            return 0;
-        }
+        if (shelf->books[i].uniqueId == id)
+            return i;
     }
+    return -1;
+}
+
+void addBook(struct Shelf *shelf, int id, int score) {
+    int index = findBook(shelf, id);
+
+    if (index != -1) {
+        shelf->books[index].popularityScore = score;
+        return;
+    }
+
     if (shelf->filled < shelf->capacity) {
-        shelf->book[shelf->filled].uniqueId = x;
-        shelf->book[shelf->filled].popularityScore = y;
+        shelf->books[shelf->filled].uniqueId = id;
+        shelf->books[shelf->filled].popularityScore = score;
         shelf->filled++;
-        return 0;
+        return;
     }
+
     int minIndex = 0;
     for (int i = 1; i < shelf->capacity; i++) {
-        if (shelf->book[i].popularityScore < shelf->book[minIndex].popularityScore) {
+        if (shelf->books[i].popularityScore < shelf->books[minIndex].popularityScore) {
             minIndex = i;
         }
     }
-    shelf->book[minIndex].uniqueId = x;
-    shelf->book[minIndex].popularityScore = y;
 
-    return 0;
+    printf("Shelf full! Evicting book with ID %d (popularity %d).\n",
+           shelf->books[minIndex].uniqueId, shelf->books[minIndex].popularityScore);
+
+    shelf->books[minIndex].uniqueId = id;
+    shelf->books[minIndex].popularityScore = score;
 }
-int accessBook(struct Shelf *shelf, int x) {
-    for (int i = 0; i < shelf->filled; i++) {
-        if (shelf->book[i].uniqueId == x) {
-            printf("%d\n", shelf->book[i].popularityScore);
-            return 0;
-        }
+
+void accessBook(struct Shelf *shelf, int id) {
+    int index = findBook(shelf, id);
+
+    if (index != -1) {
+        printf("Book ID %d has popularity score: %d\n", id, shelf->books[index].popularityScore);
+    } else {
+        printf("Book ID %d not found on the shelf.\n", id);
     }
-    printf("-1\n");
-    return -1;
 }
