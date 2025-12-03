@@ -41,7 +41,8 @@ void saveDatabase(const char *fn){
 }
 
 int checkDup(int sid){
-    for(int i=0;i<arrsz;i++){
+    int i;
+    for(i=0;i<arrsz;i++){
         if(arr[i].id==sid) return 1;
     }
     return 0;
@@ -64,12 +65,12 @@ void addStudentMem(struct StudentRec s){
 }
 
 void updStudent(int sid,const char *fn){
-    int f=0,c;
-    for(int i=0;i<arrsz;i++){
+    int f=0,c,i;
+    for(i=0;i<arrsz;i++){
         if(arr[i].id==sid){
             f=1;
             printf("New batch: ");
-            while((c=getchar()), c != '\n' && c != EOF);
+            while((void)((c=getchar())), c != '\n' && c != EOF);
             scanf("%s",arr[i].bt);
             printf("New Membership: ");
             scanf("%s",arr[i].mem);
@@ -85,7 +86,8 @@ void updStudent(int sid,const char *fn){
 
 void delStudent(int sid,const char *fn){
     int idx=-1;
-    for(int i=0;i<arrsz;i++){
+    int i,j;
+    for(i=0;i<arrsz;i++){
         if(arr[i].id==sid){
             idx=i;
             break;
@@ -95,7 +97,7 @@ void delStudent(int sid,const char *fn){
         printf("id no found bro\n");
         return;
     }
-    for(int j=idx;j<arrsz-1;j++){
+    for(j=idx;j<arrsz-1;j++){
         arr[j]=arr[j+1];
     }
     arrsz--;
@@ -103,29 +105,31 @@ void delStudent(int sid,const char *fn){
     saveDatabase(fn);
 }
 
-void showAll() {
+void showAll(void) {
     printf("ID\tName\t\tBatch\tMembership\tRegDate\t\tDOB\t\tInterest\n\n");
-    for (int i = 0; i < arrsz; i++) {
+    int i;
+    for (i = 0; i < arrsz; i++) {
         printf("%d\t%s\t%s\t%s\t\t%s\t%s\t%s\n",arr[i].id,arr[i].nm,arr[i].bt,arr[i].mem,arr[i].regdt,arr[i].dob,arr[i].intst);
     }
 }
 
 
-void repBatch(){
+void repBatch(void){
     char bx[30],mx[10];
     printf("Batch: ");
     scanf("%s",bx);
     printf("Interest: ");
     scanf("%s",mx);
     printf("Report: \n");
-    for(int i=0;i<arrsz;i++){
+    int i;
+    for(i=0;i<arrsz;i++){
         if(strcmp(arr[i].bt,bx)==0 && strcmp(arr[i].intst,mx)==0){
             printf("ID:%d Name:%s\n",arr[i].id,arr[i].nm);
         }
     }
 }
 
-int main(){
+int main(void){
     loadDatabase("members.dat");
 
     int ch=0,c;
@@ -137,7 +141,7 @@ int main(){
             struct StudentRec s;
             printf("Student ID: ");
             scanf("%d", &s.id);
-            while((c=getchar()), c != '\n' && c != EOF);
+            while((void)((c=getchar())), c != '\n' && c != EOF);
 
             if(checkDup(s.id)) {
                 printf("ID already exists!\n");
@@ -150,23 +154,23 @@ int main(){
 
             printf("Batch (CS SE AI CY): ");
             scanf("%s", s.bt);
-            while((c=getchar()), c != '\n' && c != EOF);
+            while((void)(c=getchar()), c != '\n' && c != EOF);
 
             printf("Membership Type (IEEE/ACM): ");
             scanf("%s", s.mem);
-            while((c=getchar()), c != '\n' && c != EOF);
+            while((void)(c=getchar()), c != '\n' && c != EOF);
 
             printf("Registration Date (YYYY-MM-DD): ");
             scanf("%s", s.regdt);
-            while((c=getchar()), c != '\n' && c != EOF);
+            while((void)(c=getchar()), c != '\n' && c != EOF);
 
             printf("Date of Birth (YYYY-MM-DD): ");
             scanf("%s", s.dob);
-            while((c=getchar()), c != '\n' && c != EOF);
+            while((void)(c=getchar()), c != '\n' && c != EOF);
 
             printf("Interest in (IEEE/ACM/Both): ");
             scanf("%s", s.intst);
-            while((c=getchar()), c != '\n' && c != EOF);
+            while((void)(c=getchar()), c != '\n' && c != EOF);
 
             addStudentMem(s);
             addStudentFile(s, "members.dat");
