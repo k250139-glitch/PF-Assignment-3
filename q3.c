@@ -1,153 +1,103 @@
-#include <stdio.h>
-#include <string.h>
-
-struct employee {
-    char id[10];
-    char name[50];
-    char designation[50];
-    int salary;
-};
-void displayEmployees(struct employee emp[],int n);
-void findHighestSalary(struct employee emp[],int n);
-void searchEmployee(struct employee emp[],int n);
-void giveBonus(struct employee emp[],int n);
-
-int main() {
-    int n,chose,c;
-    printf("Enter number of employees :> ");
+//25k-3105
+#include<stdio.h>
+#include<string.h>
+typedef struct EmployeeInformation{
+        int EmployeeID;
+        char Employeename[20];
+        char Designation[20];
+        float salary;
+    } Information;
+void displayEmployees(Information arr[],int n){
+    printf("\n===========================================\n");
+    printf("ID\tName\tDesignation\tSalary");
+    printf("\n===========================================\n");
+    int i;
+    for(i=0;i<n;i++){
+        printf("%d\t%s\t%s\t%f\n",arr[i].EmployeeID,arr[i].Employeename,arr[i].Designation,arr[i].salary);
+    }
+    printf("\n===========================================\n");
+}
+void findhighestsalary(Information arr[],int n){
+    int maxindex = 0;
+    int i;
+    for(i=1;i<n;i++){
+        if(arr[i].salary > arr[maxindex].salary){
+        maxindex = i;
+    }
+}
+    printf("\nEmployee with Highest Salary:\n");
+    printf("ID: %d\n",arr[maxindex].EmployeeID);
+    printf("Name: %s\n",arr[maxindex].Employeename);
+    printf("Designation: %s\n",arr[maxindex].Designation);
+    printf("Salary: %f\n",arr[maxindex].salary);
+}
+void searchEmployee(Information arr[], int n){
+    int option;
+    printf("\nSearch By:\n1. ID\n2. Name\nEnter Choice: ");
+    scanf("%d",&option);
+    if(option==1){
+        int searchID;
+        printf("Enter Employee ID: ");
+        scanf("%d",&searchID);
+        int i;
+        for(i=0;i<n;i++){
+        if(arr[i].EmployeeID == searchID){
+            printf("\nEmployee Found!\n");
+            printf("ID: %d\nName: %s\nDesignation: %s\nSalary: %f",arr[i].EmployeeID,arr[i].Employeename,arr[i].Designation,arr[i].salary);
+            return;
+        }
+        }
+        printf("Employee with %d ID not Found.\n",searchID);
+    }
+    else if(option == 2){
+        char searchname[20];
+        printf("Enter Employee Name: ");
+        scanf("%s",searchname);
+        int i;
+        for(i=0;i<n;i++){
+        if(strcmp(arr[i].Employeename , searchname)==0){
+            printf("\nEmployee Found!\n");
+            printf("ID: %d\nName: %s\nDesignation: %s\nSalary: %f",arr[i].EmployeeID,arr[i].Employeename,arr[i].Designation,arr[i].salary);
+            return;
+        }
+        }
+        printf("Employee with name %s not found.\n",searchname);
+    }
+    else{
+        printf("Invalid option!\n");
+    }
+}
+void updateSalarybonus(Information arr[], int n, float threshold){
+    int i;
+    for(i=0;i<n;i++){
+        if(arr[i].salary < threshold){
+            arr[i].salary += arr[i].salary * 0.10;
+        }
+    }
+    printf("\nSalary updated for employees earning below %f\n",threshold);
+}
+int main(void){
+    int n;
+    printf("Enter number of Employees: ");
     scanf("%d",&n);
-    struct employee emp[n];
-
-    
-    for(int i=0;i<n;i++){
-        while((c=getchar()), c != '\n' && c != EOF);
-        printf("Employee %d :) \n",i+1);
-        printf("\tId :> ");
-        fgets(emp[i].id,sizeof(emp[i].id),stdin);
-        emp[i].id[strlen(emp[i].id)-1]='\0';
-        printf("\tName :> ");
-        fgets(emp[i].name,sizeof(emp[i].name),stdin);
-        emp[i].name[strlen(emp[i].name)-1]='\0';
-        printf("\tDesignation :> ");
-        fgets(emp[i].designation,sizeof(emp[i].designation),stdin);
-        emp[i].designation[strlen(emp[i].designation)-1]='\0';
-        printf("\tSalary :> ");
-        scanf("%d",&emp[i].salary);
+    Information arr[n];
+    int i;
+    for(i=0;i<n;i++){
+     printf("\nEnter details for employee %d:\n",i+1);
+     printf("ID: ");
+     scanf("%d",&arr[i].EmployeeID);
+     printf("Name: ");
+     scanf("%s",arr[i].Employeename);
+     printf("Designation: ");
+     scanf("%s",arr[i].Designation);
+     printf("Salary: ");
+     scanf("%f",&arr[i].salary);
     }
-    while (1)
-    {
-        printf("\nMain menu\n");
-        printf("1. Display All Employees\n2. Get Employee Details With Highest Salary In staff\n3.Search Employee \n4. Give Bonus\n5. Exit\nChose :- ");
-        scanf("%d",&chose);
-        switch (chose)
-        {
-        case 1:
-            displayEmployees(emp,n);
-            break;
-        case 2:
-            findHighestSalary(emp,n);
-            break;
-        case 3:
-            searchEmployee(emp,n);
-            break;
-        case 4:
-            giveBonus(emp,n);
-            break;
-        case 5:
-            return 0;
-            break;
-        default:
-            printf("Invalid Input :(\n");
-
-            break;
-        }   
-    }
+    displayEmployees(arr,n);
+    findhighestsalary(arr,n);
+    searchEmployee(arr,n);
+    updateSalarybonus(arr,n,50000);
+    displayEmployees(arr,n);
     return 0;
 }
-void displayEmployees(struct employee emp[],int n){
-    printf("\nEmployee ID\tEmployee Name\tDesignation\tSalary\n");
-    for (int i = 0; i < n; i++)
-    {
-        if(strlen(emp[i].designation)<=6){
-            printf("%s\t\t%s\t\t%s\t\t%d\n",emp[i].id,emp[i].name,emp[i].designation,emp[i].salary);
-        }else{
-            printf("%s\t\t%s\t\t%s\t%d\n",emp[i].id,emp[i].name,emp[i].designation,emp[i].salary);
-        }
-    }
-    
-}
-void findHighestSalary(struct employee emp[],int n){
-    int highest=0;
-    printf("\nEmployee With Highest Salary In Staff");
-    for(int i=0;i<n;i++){
-        if(emp[highest].salary<emp[i].salary) highest=i;
-    }
-    printf("\nEmployee ID\tEmployee Name\tDesignation\tSalary\n");
-    if(strlen(emp[highest].designation)<=6){
-            printf("%s\t\t%s\t\t%s\t\t%d\n",emp[highest].id,emp[highest].name,emp[highest].designation,emp[highest].salary);
-        }else{
-            printf("%s\t\t%s\t\t%s\t%d\n",emp[highest].id,emp[highest].name,emp[highest].designation,emp[highest].salary);
-        }
-}
-void searchEmployee(struct employee emp[],int n){
-    int chose,c;
-    printf("\nSearch by?\n1. ID\n2. Name\nChose :- ");
-    scanf("%d",&chose);
-    switch (chose)
-    {
-    case 1:
-        char id[50];
-        while((c=getchar()), c != '\n' && c != EOF);
-        printf("ID :> ");
-        fgets(id,sizeof(id),stdin);
-        id[strlen(id)-1]='\0';
 
-        for(int i=0;i<n;i++){
-            if(strcmp(emp[i].id,id)==0) {
-                printf("\nEmployee ID\tEmployee Name\tDesignation\tSalary\n");
-                if(strlen(emp[i].designation)<=6){
-                     printf("%s\t\t%s\t\t%s\t\t%d\n",emp[i].id,emp[i].name,emp[i].designation,emp[i].salary);
-                }else{
-                    printf("%s\t\t%s\t\t%s\t%d\n",emp[i].id,emp[i].name,emp[i].designation,emp[i].salary);
-                }
-            }
-        }
-
-        break;
-    case 2:
-
-        char name[50];
-        while((c=getchar()), c != '\n' && c != EOF);
-        printf("Name :> ");
-        fgets(name,sizeof(name),stdin);
-        name[strlen(name)-1]='\0';
-
-        for(int i=0;i<n;i++){
-            if(strcmp(emp[i].name,name)==0) {
-                printf("\nEmployee ID\tEmployee Name\tDesignation\tSalary\n");
-                if(strlen(emp[i].designation)<=6){
-                    printf("%s\t\t%s\t\t%s\t\t%d\n",emp[i].id,emp[i].name,emp[i].designation,emp[i].salary);
-                }else{
-                    printf("%s\t\t%s\t\t%s\t%d\n",emp[i].id,emp[i].name,emp[i].designation,emp[i].salary);
-                }
-            }
-        }
-        break;
-    
-    default:
-        printf("\nInvalid Input :( \n");
-        break;
-    }
-}
-void giveBonus(struct employee emp[],int n){
-    float bonus=50.0;
-    float bon=bonus/100;
-
-    for (int i = 0; i < n; i++)
-    {
-        if(emp[i].salary<50000){
-            emp[i].salary *= ((1+bon));
-        }
-    }
-    printf("Successfully gave bonus %.2f to all employees that have salary below 50,000",bonus);
-}
